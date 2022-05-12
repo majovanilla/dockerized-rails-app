@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:latest #or define version
+    container_name: dockerapp-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRESS_DB=dockerapp_db
+      - POSTGRESS_USER=dockerapp
+      - POSTGRESS_PASSWORD=mypassword #chnge to secure passwrod
+    volumes: -pg_data:/var/lib/postgresql/data #where we will store data
+    redis:
+      image: redis:latest
+      container_name: dockerapp-redis
+      volumes:
+        - redis_data:/data
+    web:
+      container_name: dockerapp-web
+      build: .
+      command: bash -c "rm -f tmp/piuds.server.pid && bin/rails s -p 3000 -b 3000 -b '0.0.0.0'"
+      ports:
+        - "3000:3000"
+      environment:
+        - HISTFILE=/app/log/.bash_history
+        - POSTGRESS_HOST=db #line 2 service:db
+        - POSTGRESS_USER=dockerapp
+        - POSTGRESS_PASSWORD=mypassword
+        - REDIS_URL=redis://redis:6379
+      depends_on:
+        - db
+        - redis
+      volumes:
+        - .:/app
+        - bundle:/usr/local/bundle
+
+volumes:
+  pg_data:
+  redis_data:
+  bundle:
